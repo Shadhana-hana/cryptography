@@ -1,0 +1,56 @@
+def euclidean_gcd(a, b):
+    steps = []
+    steps.append(f"Finding GCD of {a} and {b}\n")
+    while b != 0:
+        steps.append(f"GCD({a}, {b})")
+        r = a % b
+        steps.append(f"Remainder: {r}")
+        a, b = b, r
+    steps.append(f"GCD = {a}")
+    return a, steps
+def euler_totient(n):
+    result = n
+    p = 2
+    while (p * p <= n):
+        if (n % p == 0):
+            while (n % p == 0):
+                n //= p
+            result -= result // p
+        p += 1
+    if (n > 1):
+        result -= result // n
+    return result
+def mod_power(base, exp, mod):
+    result = 1
+    base %= mod
+    while exp > 0:
+        if exp % 2 == 1:
+            result = (result * base) % mod
+        exp //= 2
+        base = (base * base) % mod
+    return result
+def is_primitive_root(a, n):
+    steps = []
+    phi = euler_totient(n)
+    residues = set()
+    steps.append(f"Checking if {a} is a primitive root of {n}\n")
+    for i in range(1, phi + 1):
+        val = mod_power(a, i, n)
+        residues.add(val)
+        steps.append(f"{a}^{i} mod {n} = {val}")
+    if len(residues) == phi and 1 in residues:
+        steps.append(f"\nAll remainders are distinct\n{a} is a primitive root of {n}")
+        return True, steps
+    else:
+        steps.append(f"\nRemainders repeat\n{a} is NOT a primitive root of {n}")
+        return False, steps
+if __name__ == "__main__":
+    # Get GCD Calculation inputs
+    a = int(input("Enter first number (a) for GCD: "))
+    b = int(input("Enter second number (b) for GCD: "))
+    gcd_result, gcd_steps = euclidean_gcd(a, b)
+    print("\n".join(gcd_steps))
+    n = int(input("\nEnter n for checking primitive root: "))
+    a = int(input("Enter a for checking if it is a primitive root of n: "))
+    primitive_root_result, primitive_root_steps = is_primitive_root(a, n)
+  print("\n".join(primitive_root_steps))
