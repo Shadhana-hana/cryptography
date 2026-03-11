@@ -1,0 +1,192 @@
+import string
+
+# ---------------- CAESAR CIPHER ----------------
+def caesar(text, encrypt=True):
+    shift = 3
+    if not encrypt:
+        shift = 26 - shift
+
+    result = ""
+    steps = "Shift = 3\n\n"
+
+    for c in text:
+        v = ord(c) - 65
+        nv = (v + shift) % 26
+        nc = chr(nv + 65)
+        steps += f"{c} → ({v} + 3) mod 26 = {nv} → {nc}\n"
+        result += nc
+
+    print("\nResult:", result)
+    print("\nSteps:\n", steps)
+
+
+# ---------------- PLAYFAIR CIPHER ----------------
+def create_matrix(key):
+    key = key.replace("J", "I")
+    alpha = "ABCDEFGHIKLMNOPQRSTUVWXYZ"
+    s = ""
+
+    for c in key + alpha:
+        if c not in s:
+            s += c
+
+    matrix = [list(s[i:i+5]) for i in range(0, 25, 5)]
+    return matrix
+
+
+def find_pos(c, matrix):
+    for i in range(5):
+        for j in range(5):
+            if matrix[i][j] == c:
+                return i, j
+
+
+def playfair(text, key, encrypt=True):
+    text = text.replace("J", "I")
+
+    # preprocessing
+    processed = ""
+    i = 0
+    while i < len(text):
+        a = text[i]
+        b = text[i+1] if i+1 < len(text) else "X"
+        if a == b:
+            processed += a + "X"
+            i += 1
+        else:
+            processed += a + b
+            i += 2
+
+    if len(processed) % 2 != 0:
+        processed += "X"
+
+    matrix = create_matrix(key)
+
+    print("\nPlayfair Matrix:")
+    for row in matrix:
+        print(" ".join(row))
+
+    print("\nDigraph Steps:")
+    shift = 1 if encrypt else -1
+    result = ""
+
+    for i in range(0, len(processed), 2):
+        a, b = processed[i], processed[i+1]
+        r1, c1 = find_pos(a, matrix)
+        r2, c2 = find_pos(b, matrix)
+
+        if r1 == r2:
+            c1n = (c1 + shift) % 5
+            c2n = (c2 + shift) % 5
+            x, y = matrix[r1][c1n], matrix[r2][c2n]
+
+        elif c1 == c2:
+            r1n = (r1 + shift) % 5
+            r2n = (r2 + shift) % 5
+            x, y = matrix[r1n][c1], matrix[r2n][c2]
+
+        else:
+            x, y = matrix[r1][c2], matrix[r2][c1]
+
+        print(f"{a}{b} → ({r1},{c1}) ({r2},{c2}) → {x}{y}")
+        result += x + y
+
+    print("\nResult:", result)
+
+
+# ---------------- HILL CIPHER (2×2) ----------------
+def mod_inverse(a, m):
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
+    return None
+
+
+def inverse_matrix(m):
+    a, b, c, d = m
+    det = (a*d - b*c) % 26
+    inv_det = mod_inverse(det, 26)
+    if inv_det is None:
+        return None
+    return [
+        ( d * inv_det) % 26,
+        (-b * inv_det) % 26,
+        (-c * inv_det) % 26,
+        ( a * inv_det) % 26
+    ]
+
+
+def hill(text, key, encrypt=True):
+    nums = list(map(int, key.split()))
+
+    if len(nums) != 4:
+        print("Enter exactly 4 numbers")
+        return
+
+    if not encrypt:
+        nums = inverse_matrix(nums)
+        if nums is None:
+            print("Matrix not invertible")
+            return
+
+    if len(text) % 2 != 0:
+        text += "X"
+
+    print("\nMatrix:")
+    print(nums[0], nums[1])
+    print(nums[2], nums[3])
+    print()
+
+    result = ""
+
+    for i in range(0, len(text), 2):
+        a, b = text[i], text[i+1]
+        x1, x2 = ord(a)-65, ord(b)-65
+
+        y1 = (nums[0]*x1 + nums[1]*x2) % 26
+        y2 = (nums[2]*x1 + nums[3]*x2) % 26
+
+        c1, c2 = chr(y1+65), chr(y2+65)
+
+        print(f"{a}{b} → ({x1},{x2}) → ({y1},{y2}) → {c1}{c2}")
+        result += c1 + c2
+
+    print("\nResult:", result)
+
+
+# ---------------- MENU (DO-WHILE STYLE) ----------------
+while True:
+    print("\n--- SUBSTITUTION CIPHERS MENU ---")
+    print("1. Caesar Cipher")
+    print("2. Playfair Cipher")
+    print("3. Hill Cipher")
+    print("4. Exit")
+
+    choice = input("Enter choice: ")
+
+    if choice == "4":
+        break
+
+    text = input("Enter text: ").upper()
+    text = "".join(c for c in text if c.isalpha())
+
+    mode = input("Encrypt (E) / Decrypt (D): ").upper()
+    encrypt = True if mode == "E" else False
+
+    if choice == "1":
+        caesar(text, encrypt)
+
+    elif choice == "2":
+        key = input("Enter Playfair key: ").upper()
+        playfair(text, key, encrypt)
+
+    elif choice == "3":
+        key = input("Enter 2×2 matrix values (a b c d): ")
+        hill(text, key, encrypt)
+
+    else:
+        print("Invalid choice")
+
+
+
+
